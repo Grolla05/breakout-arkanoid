@@ -1,0 +1,9 @@
+Rascunho — não publicado
+
+Estou começando um novo projeto com Arduino Uno: uma versão de Breakout / Arkanoid em um display OLED.
+
+O controle da raquete será feito por potenciômetro, com buzzer para os efeitos sonoros. No firmware, estou trabalhando colisões AABB separadas por eixo e blocos com diferentes níveis de resistência.
+
+Próximo passo: validar o jogo no hardware real e ajustar a resposta dos controles.
+
+#Arduino #EmbeddedSystems #Cplusplus #Maker
