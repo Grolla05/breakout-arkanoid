@@ -88,7 +88,6 @@ Os blocos têm níveis de HP diferentes. Cada contato reduz o HP; ao destruir um
 ```text
 breakout-arkanoid/
 ├── README.md
-├── post_linkedin.txt
 ├── circuit_images/                  # Imagens do projeto (vazia inicialmente)
 ├── Esquemático/
 │   └── breakout-arkanoid.asc        # Diagrama de interconexões LTspice
