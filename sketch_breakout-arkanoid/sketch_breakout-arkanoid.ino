@@ -99,19 +99,22 @@ void resetGame() {
   resetBall();
 }
 
-bool damageBrickAt(const Rect &ball) {
+int8_t damageBrickAt(const Rect &ball, int8_t alreadyHit) {
   for (uint8_t row = 0; row < BRICK_ROWS; ++row) {
     for (uint8_t column = 0; column < BRICK_COLUMNS; ++column) {
       if (brickHp[row][column] == 0) continue;
       if (!overlaps(ball, brickRect(row, column))) continue;
 
+      const int8_t index = row * BRICK_COLUMNS + column;
+      // A corner contact can overlap the same block in both axis passes.
+      if (index == alreadyHit) return index;
       --brickHp[row][column];
       if (brickHp[row][column] == 0) score += 10;
       playEffect(brickHp[row][column] == 0 ? 880 : 520, 24);
-      return true;
+      return index;
     }
   }
-  return false;
+  return -1;
 }
 
 bool allBricksCleared() {
@@ -129,13 +132,14 @@ void updatePaddle() {
 }
 
 void updateBall() {
+  int8_t hitBrick = -1;
   // Resolve X first: only horizontal velocity changes on a side collision.
   ballX += velocityX;
   if (ballX - BALL_RADIUS <= 0 || ballX + BALL_RADIUS >= SCREEN_WIDTH - 1) {
     velocityX = -velocityX;
     ballX = constrain(ballX, BALL_RADIUS, SCREEN_WIDTH - 1 - BALL_RADIUS);
     playEffect(420, 20);
-  } else if (damageBrickAt(ballRect())) {
+  } else if ((hitBrick = damageBrickAt(ballRect(), hitBrick)) >= 0) {
     velocityX = -velocityX;
   }
 
@@ -145,7 +149,7 @@ void updateBall() {
     velocityY = abs(velocityY);
     ballY = 10 + BALL_RADIUS;
     playEffect(360, 20);
-  } else if (damageBrickAt(ballRect())) {
+  } else if ((hitBrick = damageBrickAt(ballRect(), hitBrick)) >= 0) {
     velocityY = -velocityY;
   }
 
