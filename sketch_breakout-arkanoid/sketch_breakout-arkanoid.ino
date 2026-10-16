@@ -17,12 +17,14 @@ constexpr uint8_t BRICK_WIDTH = 14;
 constexpr uint8_t BRICK_HEIGHT = 5;
 constexpr uint8_t BRICK_GAP = 2;
 constexpr uint8_t BRICK_LEFT = 1;
-constexpr uint8_t BRICK_TOP = 13;
+constexpr uint8_t BRICK_TOP = 16;  // deixa >=5 px livres abaixo do teto (bola tem 5 px)
 constexpr uint8_t BALL_RADIUS = 2;
 constexpr uint8_t PADDLE_WIDTH = 20;
 constexpr uint8_t PADDLE_HEIGHT = 3;
 constexpr uint8_t PADDLE_Y = 59;
 constexpr uint16_t FRAME_MS = 20;
+constexpr uint16_t SERVE_DELAY_MS = 800;  // pausa antes de lancar a bola
+constexpr float MIN_VELOCITY_X = 0.4f;    // evita bola presa na vertical
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -37,6 +39,7 @@ uint16_t score = 0;
 uint32_t lastFrameAt = 0;
 uint32_t toneUntil = 0;
 uint32_t restartAt = 0;
+uint32_t serveAt = 0;
 bool gameOver = false;
 bool gameWon = false;
 
@@ -82,6 +85,7 @@ void resetBall() {
   ballY = 51.0f;
   velocityX = (random(0, 2) == 0) ? -1.35f : 1.35f;
   velocityY = -1.55f;
+  serveAt = millis() + SERVE_DELAY_MS;
 }
 
 void resetGame() {
@@ -132,24 +136,33 @@ void updatePaddle() {
 }
 
 void updateBall() {
+  // Bola parada durante a pausa de lancamento.
+  if (static_cast<int32_t>(millis() - serveAt) < 0) return;
+
   int8_t hitBrick = -1;
   // Resolve X first: only horizontal velocity changes on a side collision.
+  // Em colisao com bloco a posicao anterior e restaurada, para a bola nao
+  // ficar dentro do bloco e causar acertos duplicados no quadro seguinte.
+  const float prevX = ballX;
   ballX += velocityX;
   if (ballX - BALL_RADIUS <= 0 || ballX + BALL_RADIUS >= SCREEN_WIDTH - 1) {
     velocityX = -velocityX;
     ballX = constrain(ballX, BALL_RADIUS, SCREEN_WIDTH - 1 - BALL_RADIUS);
     playEffect(420, 20);
   } else if ((hitBrick = damageBrickAt(ballRect(), hitBrick)) >= 0) {
+    ballX = prevX;
     velocityX = -velocityX;
   }
 
   // Resolve Y separately for ceiling, bricks and paddle.
+  const float prevY = ballY;
   ballY += velocityY;
   if (ballY - BALL_RADIUS <= 10) {
     velocityY = abs(velocityY);
     ballY = 10 + BALL_RADIUS;
     playEffect(360, 20);
   } else if ((hitBrick = damageBrickAt(ballRect(), hitBrick)) >= 0) {
+    ballY = prevY;
     velocityY = -velocityY;
   }
 
@@ -160,6 +173,8 @@ void updateBall() {
     velocityX = hitOffset * 2.0f;
     if (velocityX > 2.0f) velocityX = 2.0f;
     if (velocityX < -2.0f) velocityX = -2.0f;
+    if (velocityX >= 0 && velocityX < MIN_VELOCITY_X) velocityX = MIN_VELOCITY_X;
+    if (velocityX < 0 && velocityX > -MIN_VELOCITY_X) velocityX = -MIN_VELOCITY_X;
     velocityY = -1.7f;
     ballY = PADDLE_Y - BALL_RADIUS - 1;
     playEffect(660, 30);
@@ -197,8 +212,13 @@ void drawGame() {
       if (brickHp[row][column] == 0) continue;
       const Rect brick = brickRect(row, column);
       display.drawRect(brick.x, brick.y, brick.w, brick.h, SSD1306_WHITE);
+      // HP 2 = um pixel central; HP 3 = dois pixels.
       if (brickHp[row][column] > 1) {
         display.drawPixel(brick.x + brick.w / 2, brick.y + 2, SSD1306_WHITE);
+      }
+      if (brickHp[row][column] > 2) {
+        display.drawPixel(brick.x + brick.w / 2 - 2, brick.y + 2, SSD1306_WHITE);
+        display.drawPixel(brick.x + brick.w / 2 + 2, brick.y + 2, SSD1306_WHITE);
       }
     }
   }

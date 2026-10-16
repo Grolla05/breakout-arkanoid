@@ -75,11 +75,11 @@ O valor analógico de A0 posiciona a raquete na parte inferior do OLED. O firmwa
 
 ### Física e colisões
 
-A posição da bola é atualizada separadamente em X e Y. Cada deslocamento verifica interseção AABB com as paredes, a raquete e os blocos; separar os eixos permite inverter apenas o componente de velocidade correspondente ao contato.
+A posição da bola é atualizada separadamente em X e Y. Cada deslocamento verifica interseção AABB com as paredes, a raquete e os blocos; separar os eixos permite inverter apenas o componente de velocidade correspondente ao contato. Em colisão com um bloco, a posição anterior da bola é restaurada para que ela não fique dentro do bloco e não cause acertos duplicados. Após cada vida perdida há uma pausa de 800 ms antes do lançamento, e a raquete sempre devolve a bola com uma componente horizontal mínima.
 
 ### Blocos e áudio
 
-Os blocos têm níveis de HP diferentes. Cada contato reduz o HP; ao destruir um bloco, a pontuação aumenta. O buzzer toca efeitos curtos sem interromper o ciclo principal do jogo.
+Os blocos têm níveis de HP diferentes (1 a 3, indicados por 0, 1 ou 3 pontos no centro do bloco). Cada contato reduz o HP; ao destruir um bloco, a pontuação aumenta. O buzzer toca efeitos curtos sem interromper o ciclo principal do jogo.
 
 ---
 
