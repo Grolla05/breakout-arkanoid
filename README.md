@@ -53,17 +53,21 @@ O potenciômetro deve ser ligado como divisor de tensão entre 5V e GND, com o c
 
 ### Esquemático elétrico
 
-<!-- Adicione a imagem exportada do LTspice em circuit_images/esquematico.png -->
 ![Esquemático elétrico do projeto](circuit_images/esquematico.png)
 
 O arquivo [breakout-arkanoid.asc](Esquemático/breakout-arkanoid.asc) registra as interconexões e os pinos usados pelo firmware. Arduino e OLED são módulos externos, não modelos SPICE simulados.
 
 ### Montagem real
 
-<!-- Adicione uma foto da montagem em circuit_images/montagem_real.jpg -->
+Montagem em protoboard com Arduino Uno, OLED SSD1306, potenciômetro e buzzer passivo. Tela de boas-vindas:
+
 ![Montagem real do projeto](circuit_images/montagem_real.jpg)
 
-Adicione as imagens aos caminhos acima depois de montar o circuito.
+Jogo em andamento (placar na faixa amarela, blocos e raquete na azul) e tela de fim de jogo:
+
+![Jogo em andamento](circuit_images/jogo_em_andamento.jpg)
+
+![Fim de jogo](circuit_images/fim_de_jogo.jpg)
 
 ---
 
@@ -88,7 +92,7 @@ Os blocos têm níveis de HP diferentes (1 a 3, indicados por 0, 1 ou 3 pontos n
 ```text
 breakout-arkanoid/
 ├── README.md
-├── circuit_images/                  # Imagens do projeto (vazia inicialmente)
+├── circuit_images/                  # Esquemático exportado e fotos da montagem
 ├── Esquemático/
 │   └── breakout-arkanoid.asc        # Diagrama de interconexões LTspice
 └── sketch_breakout-arkanoid/
@@ -103,7 +107,7 @@ breakout-arkanoid/
 2. Monte o circuito conforme a pinagem e confira a tensão do OLED.
 3. Abra `sketch_breakout-arkanoid/sketch_breakout-arkanoid.ino`.
 4. Selecione Arduino Uno e a porta serial correta.
-5. Faça upload e mova o potenciômetro para controlar a raquete.
+5. Faça upload. Ao ligar aparece a tela de boas-vindas com uma melodia curta; gire o potenciômetro para começar (ou aguarde 8 s) e use-o para controlar a raquete.
 
 ---
 
@@ -111,14 +115,16 @@ breakout-arkanoid/
 
 Os parâmetros de velocidade, dimensões da raquete e configuração da grade de blocos ficam no início do sketch. Ajuste-os conforme a resposta do controle e a taxa de atualização observadas no hardware.
 
+O módulo OLED bicolor (amarelo/azul) tem as 16 primeiras linhas amarelas: por isso o placar fica nessa faixa (`HUD_HEIGHT`) e o campo de jogo na faixa azul. Se girar o potenciômetro mover a raquete no sentido contrário ao esperado, inverta os dois valores finais do `map()` em `updatePaddle()` ou troque os terminais externos do potenciômetro. Em um OLED de uma cor só, `HUD_HEIGHT` pode ser reduzido.
+
 ---
 
 ## ✅ Estado e Próximos Passos
 
 - [x] Criar estrutura inicial do projeto e firmware base.
 - [x] Registrar pinagem e diagrama de interconexões LTspice.
-- [ ] Compilar e validar o firmware no Arduino Uno com o OLED real.
+- [x] Compilar e validar o firmware no Arduino Uno com o OLED real.
 - [ ] Calibrar movimento, dificuldade e efeitos sonoros no circuito montado.
-- [ ] Adicionar imagens do esquemático e da montagem em `circuit_images/`.
+- [x] Adicionar imagens do esquemático e da montagem em `circuit_images/`.
 
 *Desenvolvido por Felipe Grolla*

@@ -17,7 +17,10 @@ constexpr uint8_t BRICK_WIDTH = 14;
 constexpr uint8_t BRICK_HEIGHT = 5;
 constexpr uint8_t BRICK_GAP = 2;
 constexpr uint8_t BRICK_LEFT = 1;
-constexpr uint8_t BRICK_TOP = 16;  // deixa >=5 px livres abaixo do teto (bola tem 5 px)
+// OLED bicolor: as 16 primeiras linhas sao amarelas (placar) e o restante e azul (jogo).
+// O placar fica so na faixa amarela e o campo de jogo so na azul, sem misturar cores.
+constexpr uint8_t HUD_HEIGHT = 16;
+constexpr uint8_t BRICK_TOP = HUD_HEIGHT + 5;  // >=5 px livres abaixo do teto (bola tem 5 px)
 constexpr uint8_t BALL_RADIUS = 2;
 constexpr uint8_t PADDLE_WIDTH = 20;
 constexpr uint8_t PADDLE_HEIGHT = 3;
@@ -25,6 +28,8 @@ constexpr uint8_t PADDLE_Y = 59;
 constexpr uint16_t FRAME_MS = 20;
 constexpr uint16_t SERVE_DELAY_MS = 800;  // pausa antes de lancar a bola
 constexpr float MIN_VELOCITY_X = 0.4f;    // evita bola presa na vertical
+constexpr uint16_t WELCOME_TIMEOUT_MS = 8000;  // inicia sozinho apos este tempo
+constexpr int POT_START_DELTA = 60;            // quanto girar o potenciometro para iniciar
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
@@ -132,7 +137,9 @@ bool allBricksCleared() {
 
 void updatePaddle() {
   const int raw = analogRead(POT_PIN);
-  paddleX = static_cast<uint8_t>(map(raw, 0, 1023, 0, SCREEN_WIDTH - PADDLE_WIDTH));
+  // Sentido invertido: girar o potenciometro para a direita move a raquete para a direita.
+  // (Se a sua ligacao ficar ao contrario, troque os dois valores finais do map.)
+  paddleX = static_cast<uint8_t>(map(raw, 0, 1023, SCREEN_WIDTH - PADDLE_WIDTH, 0));
 }
 
 void updateBall() {
@@ -157,9 +164,9 @@ void updateBall() {
   // Resolve Y separately for ceiling, bricks and paddle.
   const float prevY = ballY;
   ballY += velocityY;
-  if (ballY - BALL_RADIUS <= 10) {
+  if (ballY - BALL_RADIUS <= HUD_HEIGHT) {
     velocityY = abs(velocityY);
-    ballY = 10 + BALL_RADIUS;
+    ballY = HUD_HEIGHT + BALL_RADIUS;
     playEffect(360, 20);
   } else if ((hitBrick = damageBrickAt(ballRect(), hitBrick)) >= 0) {
     ballY = prevY;
@@ -199,13 +206,13 @@ void drawGame() {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-  display.setCursor(1, 1);
+  display.setCursor(1, 4);
   display.print(F("PTS:"));
   display.print(score);
-  display.setCursor(91, 1);
+  display.setCursor(91, 4);
   display.print(F("V:"));
   display.print(lives);
-  display.drawFastHLine(0, 9, SCREEN_WIDTH, SSD1306_WHITE);
+  display.drawFastHLine(0, HUD_HEIGHT - 1, SCREEN_WIDTH, SSD1306_WHITE);
 
   for (uint8_t row = 0; row < BRICK_ROWS; ++row) {
     for (uint8_t column = 0; column < BRICK_COLUMNS; ++column) {
@@ -236,14 +243,58 @@ void drawGame() {
   display.display();
 }
 
+// Tela de boas-vindas: titulo na faixa amarela e vinheta do jogo na azul.
+void drawWelcome(bool showPrompt) {
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.setTextSize(2);
+  display.setCursor(16, 0);
+  display.print(F("BREAKOUT"));
+  display.setTextSize(1);
+  display.setCursor(40, 20);
+  display.print(F("ARKANOID"));
+  for (uint8_t column = 0; column < BRICK_COLUMNS; ++column) {
+    display.drawRect(BRICK_LEFT + column * (BRICK_WIDTH + BRICK_GAP), 33,
+                     BRICK_WIDTH, BRICK_HEIGHT, SSD1306_WHITE);
+  }
+  display.fillCircle(64, 43, BALL_RADIUS, SSD1306_WHITE);
+  display.fillRect(54, 49, PADDLE_WIDTH, PADDLE_HEIGHT, SSD1306_WHITE);
+  if (showPrompt) {
+    display.setCursor(7, 56);
+    display.print(F("Gire o pot p/ jogar"));
+  }
+  display.display();
+}
+
+void showWelcome() {
+  const int startPot = analogRead(POT_PIN);
+  const uint32_t startedAt = millis();
+
+  // Melodia curta de abertura (bloqueante, so acontece uma vez).
+  const uint16_t notes[] = {523, 659, 784, 1047};
+  for (uint8_t i = 0; i < 4; ++i) {
+    tone(BUZZER_PIN, notes[i], 90);
+    delay(110);
+  }
+
+  while (millis() - startedAt < WELCOME_TIMEOUT_MS) {
+    if (abs(analogRead(POT_PIN) - startPot) > POT_START_DELTA) break;
+    drawWelcome(((millis() - startedAt) / 400) % 2 == 0);  // texto pisca
+    delay(50);
+  }
+  tone(BUZZER_PIN, 880, 80);
+  delay(100);
+}
+
 void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
-  randomSeed(analogRead(A1));
+  randomSeed(analogRead(A1) + micros());
 
   if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDRESS)) {
     while (true) { delay(100); }
   }
 
+  showWelcome();
   resetGame();
   lastFrameAt = millis();
 }
