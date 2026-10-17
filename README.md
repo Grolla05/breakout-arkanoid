@@ -103,13 +103,15 @@ breakout-arkanoid/
 2. Monte o circuito conforme a pinagem e confira a tensão do OLED.
 3. Abra `sketch_breakout-arkanoid/sketch_breakout-arkanoid.ino`.
 4. Selecione Arduino Uno e a porta serial correta.
-5. Faça upload e mova o potenciômetro para controlar a raquete.
+5. Faça upload. Ao ligar aparece a tela de boas-vindas com uma melodia curta; gire o potenciômetro para começar (ou aguarde 8 s) e use-o para controlar a raquete.
 
 ---
 
 ## 🔧 Personalização
 
 Os parâmetros de velocidade, dimensões da raquete e configuração da grade de blocos ficam no início do sketch. Ajuste-os conforme a resposta do controle e a taxa de atualização observadas no hardware.
+
+O módulo OLED bicolor (amarelo/azul) tem as 16 primeiras linhas amarelas: por isso o placar fica nessa faixa (`HUD_HEIGHT`) e o campo de jogo na faixa azul. Se girar o potenciômetro mover a raquete no sentido contrário ao esperado, inverta os dois valores finais do `map()` em `updatePaddle()` ou troque os terminais externos do potenciômetro. Em um OLED de uma cor só, `HUD_HEIGHT` pode ser reduzido.
 
 ---
 
